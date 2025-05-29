@@ -153,6 +153,14 @@ footer {
   border: 1px solid rgba(205, 197, 197, 0.1);
 }
 
+  .card-top:hover {
+    cursor: pointer !important;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(to bottom, rgba(244, 241, 241, 0.2), rgba(215, 213, 213, 0.2));
+    border: 1px solid rgba(205, 197, 197, 0.2);
+    transition: all 0.3s ease;
+  }
+
 .card-t {
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

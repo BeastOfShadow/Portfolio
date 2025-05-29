@@ -1,3 +1,4 @@
+'use client';
 import Image from 'next/image'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
@@ -13,33 +14,45 @@ export default function Home() {
 
       <hr />
 
-      {/* Progetti */}
+      {/* Projects */}
       <p className="light-c pt-1">PROJECTS</p>
       <div className="row mb-4">
-        {[1, 2, 3].map((_, idx) => (
-          <div className="col-lg-4 text-start" key={idx}>
-            <div className="card-top pt-3 pb-2 pe-4 ps-4 mb-4">
-              <p className="h2">FANDERLUST</p>
-            </div>
+        {/* Mobishare App */}
+        <div className="col-lg-4 text-start">
+          <div className="card-top pt-3 pb-2 pe-4 ps-4 mb-4">
+            <p className="h2">Mobishare</p>
           </div>
-        ))}
+        </div>
+        {/* Keep The Time App */}
+        <div className="col-lg-4 text-start">
+          <div className="card-top pt-3 pb-2 pe-4 ps-4 mb-4">
+            <p className="h2">Keep The Time</p>
+          </div>
+        </div>
+        {/* Vulnerability AI */}
+        <div className="col-lg-4 text-start">
+          <div className="card-top pt-3 pb-2 pe-4 ps-4 mb-4">
+            <p className="h2">Vulnerability AI</p>
+          </div>
+        </div>
       </div>
 
       <hr />
 
-      {/* Esperienze */}
+      {/* Experiences */}
       <p className="light-c pt-1">EXPERIENCES</p>
       <div className="col-lg-4">
-        <div className="card-top pt-3 pb-2 pe-4 ps-4 mb-4">
+        {/* Fanderlust */}
+        <div className="card-top pt-3 pb-2 pe-4 ps-4 mb-4" onClick={() => window.open('https://fanderlust.com', '_blank')}>
           <div className="row mb-4">
             <div className="col-12 col-md-6">
-              <p className="h1">Fanderlust</p>
+              <p className="h2">Fanderlust</p>
             </div>
           </div>
 
           <div className="text-center mb-4">
             <Image
-              src="/img/fanderlust_phone.png"
+              src="/data/img/fanderlust_phone.png"
               alt="fanderlust-project-img"
               width={300}
               height={500}
