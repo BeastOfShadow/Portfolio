@@ -3,13 +3,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer } from 'react-leaflet';
 import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
 
 // Importa il componente Mappa con dynamic import e disabilita SSR
-const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
-const GeoJSON = dynamic(() => import('react-leaflet').then(mod => mod.GeoJSON), { ssr: false });
+const DynamicMapContainer = dynamic(
+  () => import('react-leaflet').then(mod => mod.MapContainer),
+  { ssr: false }
+);
+const DynamicTileLayer = dynamic(
+  () => import('react-leaflet').then(mod => mod.TileLayer),
+  { ssr: false }
+);
+const DynamicGeoJSON = dynamic(
+  () => import('react-leaflet').then(mod => mod.GeoJSON),
+  { ssr: false }
+)
 
 export default function AboutPage() {
   const [geoData, setGeoData] = useState(null);
@@ -123,18 +133,18 @@ export default function AboutPage() {
         <div className="col-lg-7 order-lg-1 d-flex flex-column mb-3">
           <div className="flex-grow-1 m-2 map-style pt-1">
             {geoData && (
-              <MapContainer
-                center={[45, 10]}  // Impostazione della posizione iniziale della mappa
+              <DynamicMapContainer
+                center={[45, 10]}
                 zoom={5}
                 scrollWheelZoom={true}
                 style={{ height: '100%', width: '100%' }}
               >
-                <TileLayer
+                <DynamicTileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   className="grayscale-layer"
                 />
-                <GeoJSON data={geoData} />
-              </MapContainer>
+                <DynamicGeoJSON data={geoData} />
+              </DynamicMapContainer>
             )}
           </div>
         </div>

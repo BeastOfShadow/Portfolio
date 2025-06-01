@@ -1,10 +1,110 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import './cv-page.css';
 
 export default function CVPage() {
-  const [hoveredCard, setHoveredCard] = useState(null);
+  type GithubData = {
+    repos: any[];
+    stats: {
+      totalRepos: number;
+      totalCommits: number;
+      languages: Record<string, number>;
+      totalStars: number;
+    };
+    loading: boolean;
+    error: string | null;
+  };
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
+  const [githubData, setGithubData] = useState<GithubData>({
+    repos: [],
+    stats: {
+      totalRepos: 0,
+      totalCommits: 0,
+      languages: {},
+      totalStars: 0
+    },
+    loading: true,
+    error: null
+  });
+  const [githubUserData, setGithubUserData] = useState({
+    createdAt: "",
+    updatedAt: ""
+  })
+
+  // Inserisci qui il tuo username GitHub
+  const GITHUB_USERNAME = "beastofshadow"; // Cambia con il tuo username GitHub
+
+  useEffect(() => {
+    fetchGitHubData();
+  }, []);
+
+  const fetchGitHubData = async () => {
+    try {
+      setGithubData(prev => ({ ...prev, loading: true, error: null }));
+      
+      // Fetch repositories
+      const reposResponse = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=100`);
+      console.log(`Status: ${reposResponse.status}`);
+
+      if (!reposResponse.ok) throw new Error('Failed to fetch repositories');
+      const repos = await reposResponse.json();
+
+      // Fetch user stats
+      const userResponse = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}`);
+      console.log(`Status: ${userResponse.status}`);
+
+      if (!userResponse.ok) throw new Error('Failed to fetch user data');
+      const userData = await userResponse.json();
+
+      // Calculate language statistics
+      const languageStats: { [key: string]: number } = {};
+
+      let totalStars = 0;
+      
+      for (const repo of repos) {
+        totalStars += repo.stargazers_count || 0;
+        
+        if (repo.language) {
+          languageStats[repo.language] = (languageStats[repo.language] || 0) + 1;
+        }
+      }
+
+      // Sort languages by usage
+      const sortedLanguages = Object.entries(languageStats)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10);
+
+      setGithubData({
+        repos: repos.slice(0, 6), // Top 6 recent repos
+        stats: {
+          totalRepos: userData.public_repos || 0,
+          totalCommits: 0, // GitHub API doesn't provide total commits easily
+          languages: Object.fromEntries(sortedLanguages),
+          totalStars
+        },
+        loading: false,
+        error: null
+      });
+
+      setGithubUserData({
+        createdAt: userData.created_at,
+        updatedAt: userData.updated_at
+      })
+
+    } catch (error: unknown) {
+      let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+        setGithubData(prev => ({
+          ...prev,
+          loading: false,
+          error: errorMessage
+        }));
+      }
+  };
 
   const programmingLanguages = [
     { name: 'C', level: 85, color: 'from-blue-500 to-blue-600' },
@@ -87,7 +187,7 @@ export default function CVPage() {
         {experiences.map((exp, index) => (
           <div
             key={exp.id}
-            className={`card-top pt-3 pb-2 pe-4 ps-4 mb-4 border rounded shadow-sm transition-all duration-300 ${
+            className={`card-top pt-3 pb-2 pe-4 ps-4 mb-4 transition-all duration-300 ${
               hoveredCard === exp.id ? 'transform translate-y-[-2px]' : ''
             }`}
             onMouseEnter={() => setHoveredCard(exp.id)}
@@ -98,11 +198,11 @@ export default function CVPage() {
               <div className="col-12 col-md-8">
                 <div className="d-flex align-items-center gap-3">
                   <h4 className="mb-0">{exp.company} - {exp.role}</h4>
-                  {exp.status === 'current' && (
+                  {/* {exp.status === 'current' && (
                     <span className="badge bg-success bg-opacity-20 text-success border border-success">
                       Current
                     </span>
-                  )}
+                  )} */}
                 </div>
               </div>
               <div className="col-12 col-md-4 text-start text-md-end">
@@ -145,14 +245,120 @@ export default function CVPage() {
         ))}
       </div>
 
+      {/* GitHub Projects Section */}
+      <div className="pt-4 mb-5">
+        <div className="gradient mb-4">
+          <h2 className="mb-3">GITHUB PROJECTS</h2>
+        </div>
+
+        {githubData.loading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading GitHub data...</span>
+            </div>
+            <p className="mt-3 text-muted">Fetching real data from GitHub...</p>
+          </div>
+        ) : githubData.error ? (
+          <div className="alert alert-warning" role="alert">
+            <h6>Unable to fetch GitHub data</h6>
+            <p className="mb-0">Please update the GITHUB_USERNAME variable with your actual GitHub username.</p>
+          </div>
+        ) : (
+          <>
+            {/* GitHub Stats */}
+            <div className="card-top p-4 mb-4">
+              <div className="row text-center">
+                <div className="col-12 col-md-3 mb-3 mb-md-0">
+                  <div className="h3 fw-bold text-primary">{githubData.stats.totalRepos}</div>
+                  <div className="text-muted">Public Repositories</div>
+                </div>
+                <div className="col-12 col-md-3 mb-3 mb-md-0">
+                  <div className="h3 fw-bold text-success">{Object.keys(githubData.stats.languages).length}</div>
+                  <div className="text-muted">Languages Used</div>
+                </div>
+                <div className="col-12 col-md-3 mb-3 mb-md-0">
+                  <div className="h3 fw-bold text-warning">{githubData.stats.totalStars}</div>
+                  <div className="text-muted">Total Stars</div>
+                </div>
+                <div className="col-12 col-md-3">
+                  <div className="h3 fw-bold text-info">{githubData.repos.length}</div>
+                  <div className="text-muted">Recent Projects</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Repositories */}
+            <div className="row">
+              {githubData.repos.map((repo, index) => (
+                <div key={repo.id} className="col-12 col-md-6 col-lg-4 mb-4">
+                  <div className="card-top p-3 h-100">
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <h6 className="mb-0 fw-semibold">{repo.name}</h6>
+                      <div className="d-flex gap-2 small text-muted">
+                        {repo.stargazers_count > 0 && (
+                          <span>⭐ {repo.stargazers_count}</span>
+                        )}
+                        {repo.forks_count > 0 && (
+                          <span>🍴 {repo.forks_count}</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <p className="small text-muted mb-3" style={{ minHeight: '40px' }}>
+                      {repo.description || 'No description available'}
+                    </p>
+                    
+                    <div className="d-flex justify-content-between align-items-center">
+                      {repo.language && (
+                        <span className="apple-pill px-2 py-1 small" style={{ marginTop: '0' }}>
+                          <span className="apple-pill-content small">{repo.language}</span>
+                        </span>
+                      )}
+                      <small className="text-muted">
+                        Updated {new Date(repo.updated_at).toLocaleDateString()}
+                      </small>
+                    </div>
+                    
+                    <div className="mt-3">
+                      <a 
+                        href={repo.html_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="btn btn-outline-primary btn-sm"
+                      >
+                        View Project →
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Top Languages from GitHub */}
+            <div className="mt-4">
+              <h6 className="text-uppercase mb-3 fw-semibold">Most Used Languages (from GitHub)</h6>
+              <div className="d-flex flex-wrap gap-2">
+                {Object.entries(githubData.stats.languages).map(([lang, count], idx) => (
+                  <div key={idx} className="apple-pill me-2 mb-2">
+                    <div className="apple-pill-content small">
+                      {lang} ({count} repos)
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Skills Section */}
-      <div className="pt-4">
+      <div className="pt-2">
         <div className="gradient mb-4">
           <h2 className="mb-3">TECHNICAL SKILLS</h2>
         </div>
 
         {/* Programming Languages with Progress Bars */}
-        <div className="mb-5">
+        {/* <div className="mb-5">
           <h5 className="mb-4 text-uppercase tracking-wider">Programming Languages</h5>
           <div className="row">
             {programmingLanguages.map((lang, index) => (
@@ -168,10 +374,11 @@ export default function CVPage() {
                   </div>
                   <div className="progress" style={{ height: '6px' }}>
                     <div
-                      className={`progress-bar bg-gradient-to-r ${lang.color} transition-all duration-500`}
+                      className="progress-bar"
                       style={{
                         width: `${selectedSkill === lang.name ? lang.level : lang.level * 0.8}%`,
-                        background: `linear-gradient(90deg, rgba(37, 140, 251, 0.8), rgba(37, 140, 251, 1))`
+                        background: `linear-gradient(90deg, rgba(37, 140, 251, 0.8), rgba(37, 140, 251, 1))`,
+                        transition: 'width 0.6s ease'
                       }}
                     ></div>
                   </div>
@@ -179,7 +386,7 @@ export default function CVPage() {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* Other Skills Categories */}
         <div className="row">
@@ -219,6 +426,7 @@ export default function CVPage() {
 
         {/* Experience Summary */}
         <div className="card-top p-4 mt-5">
+          <h5 className="mb-4 text-center">Experience Overview</h5>
           <div className="row text-center">
             <div className="col-12 col-md-3 mb-3 mb-md-0">
               <div className="h3 fw-bold text-primary">3+</div>
@@ -229,8 +437,30 @@ export default function CVPage() {
               <div className="text-muted">Technologies Mastered</div>
             </div>
             <div className="col-12 col-md-3 mb-3 mb-md-0">
-              <div className="h3 fw-bold text-warning">6</div>
-              <div className="text-muted">Months Experience</div>
+              {(() => {
+                const createdAt = new Date("2024-08-01T05:05:05Z");
+                const updatedAt = new Date();
+                const diffInMonths =
+                  (updatedAt.getFullYear() - createdAt.getFullYear()) * 12 +
+                  (updatedAt.getMonth() - createdAt.getMonth());
+
+                if (diffInMonths < 12) {
+                  return (
+                    <>
+                      <div className="h3 fw-bold text-warning">{diffInMonths}+</div>
+                      <div className="text-muted">Months Experience</div>
+                    </>
+                  );
+                } else {
+                  const yearsWithDecimal = diffInMonths / 12;
+                  return (
+                    <>
+                      <div className="h3 fw-bold text-warning">{yearsWithDecimal.toFixed(1)}+</div>
+                      <div className="text-muted">Years Experience</div>
+                    </>
+                  );
+                }
+              })()}
             </div>
             <div className="col-12 col-md-3">
               <div className="h3 fw-bold text-info">100%</div>
@@ -239,42 +469,6 @@ export default function CVPage() {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .progress {
-          background-color: rgba(0, 0, 0, 0.1);
-          border-radius: 3px;
-          overflow: hidden;
-        }
-        .progress-bar {
-          transition: width 0.6s ease;
-          border-radius: 3px;
-        }
-        .tracking-wider {
-          letter-spacing: 0.05em;
-        }
-        .apple-pill {
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-        .apple-pill:hover {
-          transform: translateY(-1px);
-        }
-        .card-top {
-          transition: all 0.3s ease;
-        }
-        .badge {
-          font-size: 0.75rem;
-          padding: 0.35em 0.65em;
-        }
-        .space-y-6 > * + * {
-          margin-top: 1.5rem;
-        }
-        .text-primary { color: #258cfb !important; }
-        .text-success { color: #28a745 !important; }
-        .text-warning { color: #ffc107 !important; }
-        .text-info { color: #17a2b8 !important; }
-      `}</style>
     </div>
   );
 }
